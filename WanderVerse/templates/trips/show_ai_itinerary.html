@@ -25,7 +25,13 @@
             <div id="itinerary-details" class="space-y-8">
                 {% for day in itinerary.itinerary %}
                 <div class="bg-base-200 rounded-xl p-6">
-                    <h3 class="text-xl font-semibold text-base-content border-b-2 border-base-300 pb-2 mb-4">Day {{ day.day }}</h3>
+                    <!-- Date display -->
+                     <div class=" date getter"> 
+                   
+                        {{ day.date }}
+                    
+                    
+                    </div>
                     <ul class="space-y-4">
                         {% for activity in day.activities %}
                         <li class="flex gap-4 pl-6 border-l-4 border-primary relative">
@@ -97,7 +103,6 @@
 function saveAITrip() {
     if (typeof firebase === 'undefined' || !firebase.firestore) {
         alert('Firebase is not loaded. Please try again later.');
-        console.error('Firebase is not loaded.');
         return;
     }
     const user = firebase.auth().currentUser;
@@ -110,63 +115,69 @@ function saveAITrip() {
     console.log('User ID:', userId);
 
     try {
-        // Get the itinerary data from the page
-        const itinerary = {
-            itinerary: Array.from(document.querySelectorAll('#itinerary-details > div'))
-                .filter(dayDiv => {
-                    const h3 = dayDiv.querySelector('h3');
-                    return h3 && h3.textContent.trim().startsWith('Day');
-                })
-                .map(dayDiv => {
-                    const h3 = dayDiv.querySelector('h3');
-                    const day = parseInt(h3.textContent.split(' ')[1]);
-                    const activities = Array.from(dayDiv.querySelectorAll('li')).map(activity => {
-                        const time = activity.querySelector('span')?.textContent || '';
-                        const title = activity.querySelector('h4')?.textContent || '';
-                        const description = activity.querySelector('p')?.textContent || '';
-                        const location = activity.querySelector('.fa-map-marker-alt')?.parentElement.textContent.trim();
-                        const estimatedCost = activity.querySelector('.fa-tag')?.parentElement.textContent.replace('Estimated Cost:', '').trim();
-                        const duration = activity.querySelector('.fa-clock')?.parentElement.textContent.replace('Duration:', '').trim();
+        const dayDivs = document.querySelectorAll('#itinerary-details > div.bg-base-200.rounded-xl');
+        if (dayDivs.length === 0) {
+            throw new Error('No itinerary days found');
+        }
 
-                        return {
-                            time,
-                            title,
-                            description,
-                            ...(location && { location }),
-                            ...(estimatedCost && { estimated_cost: estimatedCost }),
-                            ...(duration && { duration })
-                        };
-                    });
-                    return {
-                        day,
-                        activities
-                    };
-                }),
-            total_estimated_cost: document.querySelector('.text-2xl.font-bold.text-error')?.textContent,
-            additional_tips: Array.from(document.querySelectorAll('.border-warning.text-base-content\\/70')).map(tip => tip.textContent)
-        };
-        console.log('Extracted itinerary:', itinerary);
+        // Build itinerary as an object mapping date -> activities
+        const itinerary = {};
+        let firstDate = null;
+        let lastDate = null;
 
-        // Get the city name from the page
-        const cityName = '{{ city_name }}';
-        // Get start and end dates from the itinerary
-        const startDate = new Date();
-        const endDate = new Date();
-        endDate.setDate(startDate.getDate() + (itinerary.itinerary.length ? itinerary.itinerary.length - 1 : 0));
+        Array.from(dayDivs).forEach(dayDiv => {
+            const dateDiv = dayDiv.querySelector('.date.getter');
+            const date = dateDiv ? dateDiv.textContent.trim() : null;
+            if (!date) throw new Error('Missing date for a day in itinerary');
 
-        // Save to Firestore
+            const activities = Array.from(dayDiv.querySelectorAll('li')).map(activity => {
+                const time = activity.querySelector('span')?.textContent || '';
+                const title = activity.querySelector('h4')?.textContent || '';
+                const description = activity.querySelector('p')?.textContent || '';
+                const location = activity.querySelector('.fa-map-marker-alt')?.parentElement.textContent.trim();
+                const estimatedCost = activity.querySelector('.fa-tag')?.parentElement.textContent.replace('Estimated Cost:', '').trim();
+                const duration = activity.querySelector('.fa-clock')?.parentElement.textContent.replace('Duration:', '').trim();
+
+                return {
+                    time,
+                    title,
+                    description,
+                    ...(location && { location }),
+                    ...(estimatedCost && { estimated_cost: estimatedCost }),
+                    ...(duration && { duration })
+                };
+            });
+
+            itinerary[date] = activities;
+
+            // Track first and last date for start/end
+            if (!firstDate) firstDate = date;
+            lastDate = date;
+        });
+// different from the above
+
+
+        const total_estimated_cost = document.querySelector('.text-2xl.font-bold.text-error')?.textContent;
+        const additional_tips = Array.from(document.querySelectorAll('.border-warning.text-base-content\\/70')).map(tip => tip.textContent);
+
+        if (!firstDate || !lastDate) {
+            throw new Error('Missing date information in itinerary');
+        }
+
         firebase.firestore().collection('ai_generated_trips').add({
             userId,
-            city: cityName,
-            startDate: startDate,
-            endDate: endDate,
-            itinerary: itinerary,
+            city: '{{ city_name }}',
+            startDate: firstDate,
+            endDate: lastDate,
+            itinerary: itinerary, // This is now an object mapping date -> activities
+            total_estimated_cost,
+            additional_tips,
             isAIGenerated: true,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         })
         .then(() => {
             alert('Trip saved successfully!');
-            window.location.href = '/trips/my_trips/';
+            window.location.href = '/trips/my-trips/';
         })
         .catch((error) => {
             console.error("Error saving trip:", error);
@@ -174,7 +185,7 @@ function saveAITrip() {
         });
     } catch (err) {
         console.error('Error extracting itinerary or saving:', err);
-        alert('Error extracting itinerary or saving. See console for details.');
+        alert('Error saving trip: ' + err.message);
     }
 }
 </script>

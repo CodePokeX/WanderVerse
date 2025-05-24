@@ -7,7 +7,7 @@ from .utils.geodb_api import get_city_coordinates
 from .utils.geoapify_api import get_pois
 from .utils.hotel_api import get_amadeus_token, get_city_code, get_hotels_in_city 
 from .utils.gemini_api import generate_itinerary
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 from django.contrib.auth.decorators import login_required
 import firebase_admin
@@ -149,6 +149,12 @@ def generate_ai_itinerary(request, city_name):
             check_in_date_str = request.session.get('start_date')
             check_out_date_str = request.session.get('end_date')
             
+            # Debug logging
+            print(f"Session dates in generate_ai_itinerary:")
+            print(f"Start date: {check_in_date_str}")
+            print(f"End date: {check_out_date_str}")
+            print(f"Session keys: {request.session.keys()}")
+            
             if not check_in_date_str or not check_out_date_str:
                 messages.error(request, 'Missing date information. Please start over.')
                 return redirect('create_trip')
@@ -168,6 +174,10 @@ def generate_ai_itinerary(request, city_name):
             # Store the itinerary in session for display
             request.session['ai_itinerary'] = itinerary
             
+            # Make sure dates are still in session
+            request.session['start_date'] = check_in_date_str
+            request.session['end_date'] = check_out_date_str
+            
             # Redirect to display the generated itinerary
             return redirect('show_ai_itinerary', city_name=city_name)
             
@@ -180,14 +190,50 @@ def generate_ai_itinerary(request, city_name):
 def show_ai_itinerary(request, city_name):
     """Display the generated AI itinerary"""
     itinerary = request.session.get('ai_itinerary')
+    start_date = request.session.get('start_date')
+    
+    # Debug logging
+    print(f"Session start_date: {start_date}")
+    print(f"Session keys: {request.session.keys()}")
+    print(f"Itinerary data: {itinerary}")
     
     if not itinerary:
         messages.error(request, 'No itinerary found. Please generate one first.')
         return redirect('ai_itinerary_form', city_name=city_name)
     
+    if not start_date:
+        messages.warning(request, 'Start date not found in session. Please start over.')
+        return redirect('create_trip')
+    
+    # Calculate dates for each day
+    try:
+        start = datetime.strptime(start_date, '%Y-%m-%d')
+        print(f"Parsed start date: {start}")
+        
+        # Make sure itinerary has the expected structure
+        if 'itinerary' not in itinerary:
+            print("Warning: 'itinerary' key not found in data")
+            itinerary = {'itinerary': itinerary}
+        
+        for day in itinerary['itinerary']:
+            day_number = day.get('day', 1) - 1  # Convert to 0-based index
+            current_date = start + timedelta(days=day_number)
+            day['date'] = current_date.strftime('%Y-%m-%d')
+            print(f"Calculated date for day {day_number + 1}: {day['date']}")
+            
+    except ValueError as e:
+        print(f"Error calculating dates: {e}")
+        messages.error(request, 'Error calculating dates. Please try again.')
+        return redirect('create_trip')
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        messages.error(request, 'An error occurred. Please try again.')
+        return redirect('create_trip')
+    
     return render(request, 'trips/show_ai_itinerary.html', {
         'city_name': city_name,
-        'itinerary': itinerary
+        'itinerary': itinerary,
+        'start_date': start_date
     })
 
 def create_itinerary(request, city_name):
