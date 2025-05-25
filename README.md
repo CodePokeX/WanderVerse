@@ -36,25 +36,25 @@ To run WanderVerse locally, follow these steps:
   docker --version
   docker compose version
   ```
-- Clone the Repository
+#### 2. Clone the Repository
   ```bash
   git clone https://github.com/CodePokeX/WanderVerse.git
   cd WanderVerse/
   ```
-- Configure Environment Variables
-  - Copy the example environment file:
-    ```bash
-    cp .env.example .env
-    ```
-  - Open .env and fill in all necessary environment variables, including:
-    - Firebase credentials
-    - API keys (Gemini, Amadeus, GeoDB, Geoapify)
-    - Django secret key and any other config variables
-- Run the App with Docker
+#### 3. Configure Environment Variables
+- Copy the example environment file:
+  ```bash
+  cp .env.example .env
+  ```
+- Open .env and fill in all necessary environment variables, including:
+  - Firebase credentials
+  - API keys (Gemini, Amadeus, GeoDB, Geoapify)
+  - Django secret key and any other config variables
+#### 4. Run the App with Docker
   ```bash
   docker compose up --build
   ```
-- Access the App
+#### 5. Access the App
     Once the containers are up and running, open your browser and go to: http://localhost:8000
 
 
