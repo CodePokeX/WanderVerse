@@ -6,17 +6,58 @@ The platform is built using **Django** for the backend, **Firebase** for user au
 
 Whether you're a backpacker on a budget, a family looking for comfort, or an explorer seeking hidden gems—WanderVerse 2.0 adapts to your style and helps you plan with ease. You can create, view, and modify your trips anytime with a beautifully designed and responsive interface.
 
+---
+
 ### 🔑 Key Features
-- User-friendly trip creation with custom dates and cities
-- AI-generated itineraries tailored to preferences (budget, travel style, interests)
-- Daily plans mapped to real calendar dates
-- Firebase-authenticated login and secure itinerary storage
-- Real-time itinerary viewing and trip management
+- User-friendly trip creation with custom dates and cities  
+- AI-generated itineraries tailored to preferences (budget, travel style, interests)  
+- Daily plans mapped to real calendar dates  
+- Firebase-authenticated login and secure itinerary storage  
+- Real-time itinerary viewing and trip management  
+
+---
 
 ### 🔧 Tech Stack
-- **Backend**: Django (Python)
-- **Frontend**: HTML, CSS (Tailwind/Bootstrap), JavaScript
-- **Authentication & DB**: Firebase Authentication & Firestore
-- **APIs**: Gemini, GeoDB, Geoapify, Amadeus
+- **Backend**: Django (Python)  
+- **Frontend**: HTML, CSS (Tailwind/Bootstrap), JavaScript  
+- **Authentication & DB**: Firebase Authentication & Firestore  
+- **APIs**: Gemini, GeoDB, Geoapify, Amadeus  
 
-WanderVerse 2.0 aims to be the go-to platform for next-gen travelers who want smart, fast, and flexible travel planning.
+---
+
+### 🚀 Setup Instructions
+
+To run WanderVerse locally, follow these steps:
+
+#### 1. Install Docker & Docker Compose
+- Download and install [Docker Desktop](https://www.docker.com/products/docker-desktop) (includes Docker Compose).
+- Verify installation with:
+  ```bash
+  docker --version
+  docker compose version
+  ```
+- Clone the Repository
+  ```bash
+  git clone https://github.com/CodePokeX/WanderVerse.git
+  cd WanderVerse/
+  ```
+- Configure Environment Variables
+  - Copy the example environment file:
+    ```bash
+    cp .env.example .env
+    ```
+  - Open .env and fill in all necessary environment variables, including:
+    - Firebase credentials
+    - API keys (Gemini, Amadeus, GeoDB, Geoapify)
+    - Django secret key and any other config variables
+- Run the App with Docker
+  ```bash
+  docker compose up --build
+  ```
+- Access the App
+    Once the containers are up and running, open your browser and go to: http://localhost:8000
+
+
+
+
+
